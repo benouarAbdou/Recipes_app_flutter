@@ -46,7 +46,7 @@ CREATE TABLE "recipes" (
   "difficulty" TEXT,
   "Ingredients" TEXT,
   "directions" TEXT,
-  "calories" INTEGER,
+  "type" TEXT,
   "durationInMinutes" INTEGER
 )''');
 

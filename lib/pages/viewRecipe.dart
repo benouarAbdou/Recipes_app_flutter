@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:recipes/database/myDataBase.dart';
+import 'package:recipes/pages/addRecipe.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class ViewRecipe extends StatelessWidget {
+class ViewRecipe extends StatefulWidget {
   final int id;
 
   const ViewRecipe({
@@ -12,10 +13,23 @@ class ViewRecipe extends StatelessWidget {
   }) : super(key: key);
 
   @override
+  _ViewRecipeState createState() => _ViewRecipeState();
+}
+
+class _ViewRecipeState extends State<ViewRecipe> {
+  late Future<Map<String, dynamic>> _recipeFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _recipeFuture = _fetchRecipeDetails();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: FutureBuilder<Map<String, dynamic>>(
-        future: _fetchRecipeDetails(),
+        future: _recipeFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -60,6 +74,23 @@ class ViewRecipe extends StatelessWidget {
                               icon: const Icon(Icons.arrow_back),
                               onPressed: () {
                                 Navigator.pop(context);
+                              },
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          top: 40,
+                          right: 40,
+                          child: Container(
+                            height: 40,
+                            width: 40,
+                            decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(10)),
+                            child: IconButton(
+                              icon: const Icon(Icons.edit),
+                              onPressed: () {
+                                _navigateToEditRecipe(recipe);
                               },
                             ),
                           ),
@@ -142,10 +173,8 @@ class ViewRecipe extends StatelessWidget {
                                 icon: FontAwesomeIcons.bowlRice,
                               ),
                               DescriptionElement(
-                                text: recipe['calories'] > 0
-                                    ? "${recipe['calories']} calories"
-                                    : "Undefined",
-                                icon: FontAwesomeIcons.fire,
+                                text: recipe['type'],
+                                icon: Icons.flatware,
                               ),
                               DescriptionElement(
                                 text: "${recipe['durationInMinutes']} min",
@@ -206,8 +235,8 @@ class ViewRecipe extends StatelessWidget {
 
   Future<Map<String, dynamic>> _fetchRecipeDetails() async {
     SqlDb database = SqlDb();
-    final recipes =
-        await database.readData('SELECT * FROM recipes WHERE recipeId = $id');
+    final recipes = await database
+        .readData('SELECT * FROM recipes WHERE recipeId = ${widget.id}');
     if (recipes.isNotEmpty) {
       return recipes.first;
     } else {
@@ -227,6 +256,17 @@ class ViewRecipe extends StatelessWidget {
     if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
       throw 'Could not launch $url';
     }
+  }
+
+  void _navigateToEditRecipe(Map<String, dynamic> recipe) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+          builder: (context) => AddRecipePage(id: recipe['recipeId'])),
+    );
+    setState(() {
+      _recipeFuture = _fetchRecipeDetails();
+    });
   }
 }
 
