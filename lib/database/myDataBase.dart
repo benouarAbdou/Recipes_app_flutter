@@ -37,8 +37,7 @@ class SqlDb {
   Future<void> _onCreate(Database db, int version) async {
     await db.execute("PRAGMA foreign_keys = ON");
 
-    await db.execute(
-        '''
+    await db.execute('''
 CREATE TABLE "recipes" (
   "recipeId" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
   "name" TEXT NOT NULL,
@@ -47,6 +46,7 @@ CREATE TABLE "recipes" (
   "Ingredients" TEXT,
   "directions" TEXT,
   "type" TEXT,
+  "path" TEXT,
   "durationInMinutes" INTEGER
 )''');
 

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:recipes/database/myDataBase.dart';
@@ -39,10 +41,12 @@ class _ViewRecipeState extends State<ViewRecipe> {
             return const Center(child: Text('No recipe found'));
           } else {
             final recipe = snapshot.data!;
-            final ingredients = (recipe['Ingredients'] as String).split('@');
+            final ingredients = recipe['Ingredients'].isEmpty
+                ? []
+                : (recipe['Ingredients'] as String).split('@');
             final directions = recipe['directions'] as String;
             final youtubeLink = recipe['youtubeLink'] as String;
-
+            print(ingredients.length);
             return Stack(
               children: [
                 Column(
@@ -53,11 +57,20 @@ class _ViewRecipeState extends State<ViewRecipe> {
                         Container(
                           height: 250,
                           color: const Color(0xFFFF6E6E),
-                          child: const Center(
-                            child: Icon(
-                              Icons.restaurant,
-                              size: 100,
-                              color: Colors.white,
+                          child: Center(
+                            child: Image.file(
+                              File(recipe['path']!),
+                              height: 250,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                              errorBuilder: (BuildContext context,
+                                  Object exception, StackTrace? stackTrace) {
+                                return const Icon(
+                                  Icons.restaurant,
+                                  color: Colors.white,
+                                  size: 100,
+                                );
+                              },
                             ),
                           ),
                         ),
@@ -170,15 +183,18 @@ class _ViewRecipeState extends State<ViewRecipe> {
                             children: [
                               DescriptionElement(
                                 text: recipe['difficulty'],
-                                icon: FontAwesomeIcons.bowlRice,
+                                icon: FontAwesomeIcons.fire,
                               ),
                               DescriptionElement(
                                 text: recipe['type'],
                                 icon: Icons.flatware,
                               ),
                               DescriptionElement(
-                                text: "${recipe['durationInMinutes']} min",
-                                icon: FontAwesomeIcons.clock,
+                                text: ingredients.length > 1 ||
+                                        ingredients.isEmpty
+                                    ? "${ingredients.length} ingredients"
+                                    : "${ingredients.length} ingredient",
+                                icon: FontAwesomeIcons.carrot,
                               ),
                             ],
                           ),

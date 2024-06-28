@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:recipes/database/myDataBase.dart';
 import 'package:recipes/pages/addRecipe.dart';
@@ -167,7 +169,7 @@ class _MyHomePageState extends State<MyHomePage> {
                               name: recipe['name'],
                               difficulty: recipe['difficulty'],
                               type: recipe['type'],
-                              duration: '${recipe['durationInMinutes']} min',
+                              imagePath: recipe['path'], // Add imagePath
                               refreshCallback:
                                   _fetchRecipes, // Pass the callback
                               isSelected:
@@ -198,8 +200,9 @@ class RecipeBox extends StatelessWidget {
   final String name;
   final String difficulty;
   final String type;
+  final String? imagePath; // Add imagePath parameter
   final int id;
-  final String duration;
+
   final VoidCallback refreshCallback; // Callback to refresh recipes
   final VoidCallback onDelete; // Callback to delete recipe
   final VoidCallback onLongPress; // Callback for long press
@@ -211,15 +214,16 @@ class RecipeBox extends StatelessWidget {
     required this.name,
     required this.difficulty,
     required this.type,
-    required this.duration,
     required this.refreshCallback, // Receive the callback
     required this.onDelete, // Receive the delete callback
     required this.onLongPress, // Receive the long press callback
     required this.isSelected, // Receive the selection status
+    this.imagePath, // Receive the imagePath
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    print(imagePath);
     return Column(
       children: [
         InkWell(
@@ -246,17 +250,33 @@ class RecipeBox extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Container(
+                      width: 60,
+                      height: 60,
                       decoration: BoxDecoration(
                         color: const Color(0xFFFF6E6E),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      width: 60,
-                      height: 60,
-                      child: const Icon(
-                        Icons.restaurant,
-                        color: Colors.white,
-                        size: 18,
-                      ),
+                      child: imagePath != null && imagePath!.isNotEmpty
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: Image.file(
+                                File(imagePath!),
+                                fit: BoxFit.cover,
+                                errorBuilder: (BuildContext context,
+                                    Object exception, StackTrace? stackTrace) {
+                                  return const Icon(
+                                    Icons.restaurant,
+                                    color: Colors.white,
+                                    size: 18,
+                                  );
+                                },
+                              ),
+                            )
+                          : const Icon(
+                              Icons.restaurant,
+                              color: Colors.white,
+                              size: 18,
+                            ),
                     ),
                     const SizedBox(width: 10),
                     Column(
@@ -271,7 +291,7 @@ class RecipeBox extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          '$difficulty - $duration - $type',
+                          '$difficulty - $type',
                         )
                       ],
                     ),

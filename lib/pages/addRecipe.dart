@@ -1,5 +1,9 @@
+import 'dart:io';
+
+import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:recipes/database/myDataBase.dart';
 import 'package:syncfusion_flutter_sliders/sliders.dart';
 
@@ -17,7 +21,9 @@ class _AddRecipePageState extends State<AddRecipePage> {
   final TextEditingController _youtubeLinkController = TextEditingController();
   final TextEditingController _ingredientController = TextEditingController();
   final TextEditingController _directionsController = TextEditingController();
-  double _durationInMinutes = 15;
+  String _imagePath = '';
+  int checker = 0;
+  bool isImageSet = false;
   String _difficulty = 'Easy';
   String _type = 'Dessert'; // Default value for type
   final List<String> _ingredients = [];
@@ -51,45 +57,49 @@ class _AddRecipePageState extends State<AddRecipePage> {
         _nameController.text = result[0]['name'];
         _youtubeLinkController.text = result[0]['youtubeLink'];
         _type = result[0]['type'].toString();
-        _ingredients.addAll(result[0]['Ingredients'].split('@'));
+
+        result[0]['Ingredients'].isEmpty
+            ? _ingredients.clear()
+            : _ingredients.addAll(result[0]['Ingredients'].split('@'));
         _directionsController.text = result[0]['directions'];
-        _durationInMinutes = result[0]['durationInMinutes']
-            .toDouble(); // Ensure to convert to double
-        _difficulty =
-            result[0]['difficulty']; // Ensure to set difficulty correctly
+        _difficulty = result[0]['difficulty'];
+        _imagePath = result[0]['path'];
         isSet = true;
+        checker = _imagePath.length;
       });
     }
+    print("i:$checker");
   }
 
   Future<void> _saveRecipe() async {
     if (_formKey.currentState!.validate()) {
       String name = _nameController.text;
       String youtubeLink = _youtubeLinkController.text;
-      String ingredients = _ingredients.join('@');
+      String ingredients =
+          _ingredients.isNotEmpty ? _ingredients.join('@') : '';
+
       String directions = _directionsController.text;
       String type = _type;
-      int durationInMinutes = _durationInMinutes.toInt();
       String difficulty = _difficulty;
 
       String sql;
       if (widget.id == null) {
         sql = '''
-          INSERT INTO recipes (name, youtubeLink, difficulty, ingredients, directions, type, durationInMinutes)
-          VALUES ("$name", "$youtubeLink", "$difficulty", "$ingredients", "$directions", "$type", $durationInMinutes)
-        ''';
+        INSERT INTO recipes (name, youtubeLink, difficulty, ingredients, directions, type, path)
+        VALUES ("$name", "$youtubeLink", "$difficulty", "$ingredients", "$directions", "$type", "$_imagePath")
+      ''';
       } else {
         sql = '''
-          UPDATE recipes SET
-          name = "$name",
-          youtubeLink = "$youtubeLink",
-          difficulty = "$difficulty",
-          ingredients = "$ingredients",
-          directions = "$directions",
-          type = "$type",
-          durationInMinutes = $durationInMinutes
-          WHERE recipeId = ${widget.id}
-        ''';
+        UPDATE recipes SET
+        name = "$name",
+        youtubeLink = "$youtubeLink",
+        difficulty = "$difficulty",
+        ingredients = "$ingredients",
+        directions = "$directions",
+        type = "$type",
+        path = "$_imagePath"
+        WHERE recipeId = ${widget.id}
+      ''';
       }
 
       await sqlDb.insertData(sql);
@@ -100,12 +110,24 @@ class _AddRecipePageState extends State<AddRecipePage> {
       _directionsController.clear();
       setState(() {
         _ingredients.clear();
-        _durationInMinutes = 15;
         _difficulty = 'Easy';
-        _type = 'Dessert'; // Reset type to default
+        _type = 'Dessert';
+        _imagePath = '';
       });
 
       Navigator.pop(context);
+    }
+  }
+
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      setState(() {
+        _imagePath = pickedFile.path;
+        isImageSet = true;
+      });
     }
   }
 
@@ -131,7 +153,7 @@ class _AddRecipePageState extends State<AddRecipePage> {
         future: _recipeDetailsFuture,
         builder: (context, snapshot) {
           return Padding(
-            padding: const EdgeInsets.all(20.0),
+            padding: const EdgeInsets.only(top: 20, left: 20, right: 20),
             child: Form(
               key: _formKey,
               child: ListView(
@@ -293,20 +315,107 @@ class _AddRecipePageState extends State<AddRecipePage> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  Text('Duration in Minutes: ${_durationInMinutes.toInt()}'),
-                  SfSlider(
-                    min: 15.0,
-                    max: 120.0,
-                    interval: 15,
-                    stepSize: 15,
-                    showTicks: true,
-                    showLabels: true,
-                    value: _durationInMinutes,
-                    onChanged: (value) {
-                      setState(() {
-                        _durationInMinutes = value;
-                      });
-                    },
+                  DottedBorder(
+                    padding: const EdgeInsets.all(20),
+                    borderType: BorderType.RRect,
+                    radius: const Radius.circular(10),
+                    dashPattern: const [4, 3],
+                    color: Colors.grey,
+                    strokeWidth: 2,
+                    child: checker < 5
+                        ? Center(
+                            child: Column(
+                              children: [
+                                Text(
+                                  "10.0 MB Maximum file size",
+                                  style: TextStyle(color: Colors.grey[700]),
+                                ),
+                                const SizedBox(
+                                  height: 10,
+                                ),
+                                GestureDetector(
+                                  onTap: _pickImage,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(10),
+                                        border: Border.all(
+                                          color: const Color(0xFFFF6E6E),
+                                        )),
+                                    child: const Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          "Upload image",
+                                          style: TextStyle(
+                                            color: Color(0xFFFF6E6E),
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        SizedBox(
+                                          width: 10,
+                                        ),
+                                        Icon(
+                                          Icons.upload_rounded,
+                                          color: Color(0xFFFF6E6E),
+                                        )
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        : Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                children: [
+                                  GestureDetector(
+                                    onTap: _pickImage,
+                                    child: Container(
+                                      padding: const EdgeInsets.all(10),
+                                      decoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                          border: Border.all(
+                                            color: const Color(0xFFFF6E6E),
+                                          )),
+                                      child: const Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Text(
+                                            "Change image",
+                                            style: TextStyle(
+                                              color: Color(0xFFFF6E6E),
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          SizedBox(
+                                            width: 10,
+                                          ),
+                                          Icon(
+                                            Icons.upload_rounded,
+                                            color: Color(0xFFFF6E6E),
+                                          )
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(
+                                height: 100,
+                                width: 100,
+                                child: Image.file(
+                                    fit: BoxFit.cover, File(_imagePath)),
+                              ),
+                            ],
+                          ),
                   ),
                   const SizedBox(height: 32),
                   TextButton(
