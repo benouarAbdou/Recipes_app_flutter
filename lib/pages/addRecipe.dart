@@ -115,7 +115,7 @@ class _AddRecipePageState extends State<AddRecipePage> {
         _imagePath = '';
       });
 
-      Navigator.pop(context);
+      Navigator.pop(context, 1);
     }
   }
 
@@ -180,9 +180,9 @@ class _AddRecipePageState extends State<AddRecipePage> {
                         ),
                       ),
                       const SizedBox(width: 10),
-                      const Text(
-                        "Add/Edit Recipe",
-                        style: TextStyle(
+                      Text(
+                        widget.id != null ? "Edit Recipe" : "Add Recipe",
+                        style: const TextStyle(
                             fontSize: 22, fontWeight: FontWeight.w400),
                       ),
                     ],
@@ -200,8 +200,7 @@ class _AddRecipePageState extends State<AddRecipePage> {
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
-                    decoration:
-                        InputDeco("Youtube link", FontAwesomeIcons.youtube),
+                    decoration: InputDeco("Video link", FontAwesomeIcons.video),
                     controller: _youtubeLinkController,
                   ),
                   const SizedBox(height: 16),
@@ -266,12 +265,6 @@ class _AddRecipePageState extends State<AddRecipePage> {
                     controller: _directionsController,
                     decoration:
                         InputDeco("Directions", FontAwesomeIcons.info, 5),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter the directions';
-                      }
-                      return null;
-                    },
                   ),
                   const SizedBox(height: 16),
                   Row(
@@ -322,7 +315,7 @@ class _AddRecipePageState extends State<AddRecipePage> {
                     dashPattern: const [4, 3],
                     color: Colors.grey,
                     strokeWidth: 2,
-                    child: checker < 5
+                    child: checker < 5 && !isImageSet
                         ? Center(
                             child: Column(
                               children: [

@@ -147,7 +147,9 @@ class _ViewRecipeState extends State<ViewRecipe> {
                                   ),
                                 ),
                               ),
-                              if (_isValidYoutubeLink(youtubeLink))
+                              if (_isValidYoutubeLink(youtubeLink) ||
+                                  _isValidFacebookLink(youtubeLink) ||
+                                  _isValidInstagramLink(youtubeLink))
                                 GestureDetector(
                                   onTap: () {
                                     _launchURL(youtubeLink);
@@ -159,17 +161,26 @@ class _ViewRecipeState extends State<ViewRecipe> {
                                         color: const Color(0xFFFF6E6E),
                                         borderRadius:
                                             BorderRadius.circular(20)),
-                                    child: const Row(
+                                    child: Row(
                                       children: [
-                                        Text(
-                                          "Youtube",
+                                        const Text(
+                                          "Watch",
                                           style: TextStyle(
                                               color: Colors.white,
                                               fontWeight: FontWeight.w500),
                                         ),
+                                        const SizedBox(
+                                          width: 5,
+                                        ),
                                         Icon(
-                                          Icons.play_arrow,
+                                          _isValidYoutubeLink(youtubeLink)
+                                              ? FontAwesomeIcons.youtube
+                                              : _isValidFacebookLink(
+                                                      youtubeLink)
+                                                  ? FontAwesomeIcons.facebook
+                                                  : FontAwesomeIcons.instagram,
                                           color: Colors.white,
+                                          size: 16,
                                         )
                                       ],
                                     ),
@@ -267,6 +278,18 @@ class _ViewRecipeState extends State<ViewRecipe> {
     return regExp.hasMatch(url);
   }
 
+  bool _isValidInstagramLink(String url) {
+    const instagramPattern = r'^https?:\/\/(?:www\.)?instagram\.com\/.*';
+    final regExp = RegExp(instagramPattern);
+    return regExp.hasMatch(url);
+  }
+
+  bool _isValidFacebookLink(String url) {
+    const facebookPattern = r'^https?:\/\/(?:www\.)?facebook\.com\/.*';
+    final regExp = RegExp(facebookPattern);
+    return regExp.hasMatch(url);
+  }
+
   void _launchURL(String url) async {
     final Uri uri = Uri.parse(url);
     if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
@@ -279,7 +302,16 @@ class _ViewRecipeState extends State<ViewRecipe> {
       context,
       MaterialPageRoute(
           builder: (context) => AddRecipePage(id: recipe['recipeId'])),
-    );
+    ).then((value) {
+      if (value == 1) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Recipe edited successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    });
     setState(() {
       _recipeFuture = _fetchRecipeDetails();
     });

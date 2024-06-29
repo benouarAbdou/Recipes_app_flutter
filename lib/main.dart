@@ -18,6 +18,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Flutter Demo',
       theme: ThemeData(
+        fontFamily: 'Folks',
         useMaterial3: false,
         colorScheme: ColorScheme.fromSwatch().copyWith(
           primary: const Color(0xFFFF6E6E),
@@ -49,7 +50,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void _fetchRecipes() {
     setState(() {
-      _recipesFuture = database.readData('SELECT * FROM recipes');
+      _recipesFuture =
+          database.readData('SELECT * FROM recipes ORDER BY recipeId DESC');
     });
   }
 
@@ -72,7 +74,13 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void _deleteRecipe(int id) async {
     await database.deleteData('DELETE FROM recipes WHERE recipeId = $id');
-    _fetchRecipes(); // Refresh recipes after deletion
+    _fetchRecipes();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Recipe deleted successfully'),
+        backgroundColor: Colors.green,
+      ),
+    ); // Refresh recipes after deletion
     setState(() {
       _selectedRecipeId = null; // Deselect the recipe box
     });
@@ -97,6 +105,14 @@ class _MyHomePageState extends State<MyHomePage> {
                 context,
                 MaterialPageRoute(builder: (context) => const AddRecipePage()),
               ).then((value) {
+                if (value == 1) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Recipe added successfully'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
                 _fetchRecipes(); // Refresh recipes after adding a new one
               });
             },
@@ -243,15 +259,15 @@ class RecipeBox extends StatelessWidget {
           onLongPress: onLongPress, // Handle long press
           child: SizedBox(
             width: MediaQuery.of(context).size.width,
-            height: 60,
+            height: 80,
             child: Stack(
               children: [
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Container(
-                      width: 60,
-                      height: 60,
+                      width: 80,
+                      height: 80,
                       decoration: BoxDecoration(
                         color: const Color(0xFFFF6E6E),
                         borderRadius: BorderRadius.circular(10),
@@ -284,14 +300,27 @@ class RecipeBox extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          name,
+                          "${type.toUpperCase()} RECIPE",
                           style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
+                              color: Color(0xFFFF6E6E),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500),
+                        ),
+                        SizedBox(
+                          width: 175,
+                          child: Text(
+                            maxLines: 2,
+                            softWrap: true,
+                            overflow: TextOverflow.ellipsis,
+                            name,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                            ),
                           ),
                         ),
                         Text(
-                          '$difficulty - $type',
+                          difficulty,
                         )
                       ],
                     ),
