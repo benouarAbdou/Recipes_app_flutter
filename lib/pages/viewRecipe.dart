@@ -1,9 +1,11 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:recipes/database/myDataBase.dart';
 import 'package:recipes/pages/addRecipe.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ViewRecipe extends StatefulWidget {
@@ -25,6 +27,13 @@ class _ViewRecipeState extends State<ViewRecipe> {
   void initState() {
     super.initState();
     _recipeFuture = _fetchRecipeDetails();
+  }
+
+  void _shareRecipe(Map<String, dynamic> recipe) {
+    String recipeText =
+        """Recipe Name: ${recipe['name']}\nDifficulty: ${recipe['difficulty']}\nType: ${recipe['type']}\nIngredients: ${recipe['Ingredients'].isEmpty ? "" : recipe['Ingredients']}\nDirections: ${recipe['directions']}\nVideo Link: ${recipe['youtubeLink']}""";
+
+    Share.share(recipeText);
   }
 
   @override
@@ -246,6 +255,36 @@ class _ViewRecipeState extends State<ViewRecipe> {
                           Text(
                             directions,
                             style: const TextStyle(fontSize: 16),
+                          ),
+                          const SizedBox(
+                            height: 10,
+                          ),
+                          SizedBox(
+                            width: double.infinity,
+                            child: TextButton(
+                              onPressed: () {
+                                _shareRecipe(recipe);
+                              },
+                              style: TextButton.styleFrom(
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                    vertical: 12.0, horizontal: 24.0),
+                                backgroundColor: const Color(0xFFFF6E6E),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                              child: const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.share),
+                                  SizedBox(
+                                    width: 10,
+                                  ),
+                                  Text('Share Recipe'),
+                                ],
+                              ),
+                            ),
                           ),
                         ],
                       ),

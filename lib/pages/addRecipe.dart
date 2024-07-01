@@ -2,10 +2,10 @@ import 'dart:io';
 
 import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:recipes/database/myDataBase.dart';
-import 'package:syncfusion_flutter_sliders/sliders.dart';
 
 class AddRecipePage extends StatefulWidget {
   final int? id;
@@ -46,6 +46,68 @@ class _AddRecipePageState extends State<AddRecipePage> {
     if (widget.id != null) {
       await _fetchRecipeDetails();
     }
+  }
+
+  void _pasteRecipeFromClipboard() async {
+    ClipboardData? clipboardData =
+        await Clipboard.getData(Clipboard.kTextPlain);
+    if (clipboardData != null && clipboardData.text != null) {
+      String clipboardText = clipboardData.text!;
+
+      if (_isValidRecipeFormat(clipboardText)) {
+        _nameController.text = _getValueFromText(clipboardText, "Recipe Name:");
+        _difficulty = _getValueFromText(clipboardText, "Difficulty:");
+        _type = _getValueFromText(clipboardText, "Type:");
+        _ingredients.clear();
+        String ingredientsSection =
+            _getValueFromText(clipboardText, "Ingredients:");
+        if (ingredientsSection.isNotEmpty) {
+          _ingredients.addAll(ingredientsSection
+              .trim()
+              .split('@')
+              .map((ingredient) => ingredient.trim()));
+        }
+        _directionsController.text =
+            _getValueFromText(clipboardText, "Directions:");
+        _youtubeLinkController.text =
+            _getValueFromText(clipboardText, "Video Link:");
+
+        // Set the image path if applicable
+        setState(() {
+          _imagePath =
+              ''; // Set the image path here if you have it in the clipboard format
+        });
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Invalid recipe format in clipboard'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  bool _isValidRecipeFormat(String text) {
+    return text.contains("Recipe Name:") &&
+        text.contains("Difficulty:") &&
+        text.contains("Type:") &&
+        text.contains("Ingredients:") &&
+        text.contains("Directions:") &&
+        text.contains("Video Link:");
+  }
+
+  String _getValueFromText(String text, String prefix) {
+    int startIndex = text.indexOf(prefix);
+    if (startIndex != -1) {
+      startIndex += prefix.length;
+      int endIndex = text.indexOf('\n', startIndex);
+      if (endIndex == -1) {
+        endIndex = text.length;
+      }
+      return text.substring(startIndex, endIndex).trim();
+    }
+    return '';
   }
 
   Future<void> _fetchRecipeDetails() async {
@@ -160,30 +222,60 @@ class _AddRecipePageState extends State<AddRecipePage> {
                 physics: const BouncingScrollPhysics(),
                 children: [
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Container(
-                        height: 40,
-                        width: 40,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFF6E6E),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: IconButton(
-                          icon: const Icon(
-                            Icons.arrow_back,
-                            color: Colors.white,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          Container(
+                            height: 40,
+                            width: 40,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFF6E6E),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: IconButton(
+                              icon: const Icon(
+                                Icons.arrow_back,
+                                color: Colors.white,
+                              ),
+                              onPressed: () {
+                                Navigator.pop(context);
+                              },
+                            ),
                           ),
-                          onPressed: () {
-                            Navigator.pop(context);
-                          },
-                        ),
+                          const SizedBox(width: 10),
+                          Text(
+                            widget.id != null ? "Edit Recipe" : "Add Recipe",
+                            style: const TextStyle(
+                                fontSize: 22, fontWeight: FontWeight.w400),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 10),
-                      Text(
-                        widget.id != null ? "Edit Recipe" : "Add Recipe",
-                        style: const TextStyle(
-                            fontSize: 22, fontWeight: FontWeight.w400),
+                      TextButton(
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.all(12),
+                          backgroundColor: Colors.blueAccent,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        onPressed: () {
+                          _pasteRecipeFromClipboard();
+                        },
+                        child: const Row(
+                          children: [
+                            Icon(
+                              FontAwesomeIcons.paste,
+                              size: 18,
+                            ),
+                            SizedBox(
+                              width: 5,
+                            ),
+                            Text('Paste Recipe'),
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -410,7 +502,7 @@ class _AddRecipePageState extends State<AddRecipePage> {
                             ],
                           ),
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 16),
                   TextButton(
                     onPressed: _saveRecipe,
                     style: TextButton.styleFrom(
